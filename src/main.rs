@@ -1,10 +1,10 @@
-mod util;
+mod mesh;
 
+use mesh::{PolygonMesh, mesh_view, wireframe_view};
 use three_d::{
-    AmbientLight, Camera, ClearState, DirectionalLight, FrameOutput, InnerSpace, Srgba, Window,
-    WindowSettings, degrees, vec3,
+    AmbientLight, Camera, ClearState, DirectionalLight, FrameOutput, InnerSpace, OrbitControl,
+    Srgba, Window, WindowSettings, degrees, vec3,
 };
-use util::{CameraMouseControl, PolygonMesh, mesh_view, wireframe_view};
 
 fn main() {
     // Window and context.
@@ -27,8 +27,7 @@ fn main() {
         0.1,
         1000.0,
     );
-    let mut control =
-        CameraMouseControl::new(*camera.target(), 0.1 * scene_radius, 100.0 * scene_radius);
+    let mut control = OrbitControl::new(*camera.target(), 1.0, 100.0);
     let ambient = AmbientLight::new(&context, 0.7, Srgba::WHITE);
     let directional0 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0));
     let directional1 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(1.0, 1.0, 1.0));
