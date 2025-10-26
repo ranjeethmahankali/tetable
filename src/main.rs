@@ -27,10 +27,10 @@ fn main() {
         0.1,
         1000.0,
     );
-    let mut control = OrbitControl::new(*camera.target(), 1.0, 100.0);
+    let mut control = OrbitControl::new(camera.target(), 1.0, 100.0);
     let ambient = AmbientLight::new(&context, 0.7, Srgba::WHITE);
-    let directional0 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0));
-    let directional1 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, &vec3(1.0, 1.0, 1.0));
+    let directional0 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, vec3(-1.0, -1.0, -1.0));
+    let directional1 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, vec3(1.0, 1.0, 1.0));
     // Create the mesh.
     let mut mesh = PolygonMesh::tetrahedron(1.0).expect("Cannot create tet mesh");
     mesh.update_vertex_normals_accurate().unwrap();
