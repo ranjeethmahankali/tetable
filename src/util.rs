@@ -64,20 +64,6 @@ impl DotProductAdaptor<3> for MeshAdaptor {
 
 pub type PolygonMesh = PolyMeshT<3, MeshAdaptor>;
 
-fn regular_tet() -> PolygonMesh {
-    PolygonMesh::unit_box().expect("Cannot create the mesh")
-    // // Regular tetrahedron with horizontal base at z = -1/3, apex at z = 1
-    // // Base vertices at 120° intervals, ordered counter-clockwise from above
-    // let points = [
-    //     vec3(2.0 * 2.0f32.sqrt() / 3.0, 0.0, -1.0 / 3.0),
-    //     vec3(-2.0f32.sqrt() / 3.0, -6.0f32.sqrt() / 3.0, -1.0 / 3.0),
-    //     vec3(-2.0f32.sqrt() / 3.0, 6.0f32.sqrt() / 3.0, -1.0 / 3.0),
-    //     vec3(0.0, 0.0, 1.0),  // apex
-    // ];
-    // let mut mesh = PolygonMesh::with_capacity(4, 6, 4);
-    // todo!();
-}
-
 ///
 /// A control that makes the camera orbit around a target.
 ///

@@ -40,8 +40,7 @@ dependencies = [
 [[package]]
 name = "alum"
 version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dd55e810ac77f4479eeb539f5aad93b3ca5f034cad8ed8568212122a47c3ce8"
+source = "git+https://github.com/ranjeethmahankali/alum/?branch=tetable-misc-improvements#2538ad79799f87fac9d442336a085e670b5ed67e"
 dependencies = [
  "tobj",
 ]

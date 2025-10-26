@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-alum = "0.6"
-three-d = {version = "0.17", features = ["egui-gui"]}
+alum = { version = "0.6", git = "https://github.com/ranjeethmahankali/alum/", branch = "tetable-misc-improvements" }
+three-d = { version = "0.17", features = ["egui-gui"] }
