@@ -1,0 +1,8 @@
+[package]
+name = "tetable"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+alum = "0.6"
+three-d = {version = "0.17", features = ["egui-gui"]}
