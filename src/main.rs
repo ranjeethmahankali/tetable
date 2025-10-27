@@ -1,12 +1,15 @@
 mod mesh;
+mod tables;
 
-use mesh::{PolygonMesh, mesh_view, wireframe_view};
+use std::time::Instant;
+
+use mesh::{MeshView, PolygonMesh, base_mesh_view, surf_mesh_view, volume_mesh_view};
+use tables::{SurfaceTable, VolumeTable};
 use three_d::{
-    AmbientLight, Camera, ClearState, DirectionalLight, FrameOutput, InnerSpace, OrbitControl,
-    Srgba, Viewport, Window, WindowSettings, degrees, vec3,
+    AmbientLight, Camera, ClearState, Context, DirectionalLight, FrameOutput, InnerSpace, Object,
+    OrbitControl, Srgba, Viewport, Window, WindowSettings, degrees, vec3,
 };
 
-#[derive(Default)]
 struct VertState {
     state: String,
     index: String,
@@ -24,14 +27,65 @@ enum State {
     Error(String),
 }
 
-#[derive(Default)]
 struct App {
     vstates: [VertState; 4],
     state: State,
+    surf_table: SurfaceTable,
+    volume_table: VolumeTable,
+    base_tet: MeshView,
+    surf_mesh: Option<MeshView>,
+    surf_indices: Vec<u8>,
+    vol_mesh: Option<MeshView>,
+    vol_indices: Vec<u8>,
 }
 
 impl App {
-    fn update(&mut self) -> bool {
+    fn new(context: &Context) -> Self {
+        let mut out = Self {
+            vstates: [
+                VertState {
+                    state: "0".to_string(),
+                    index: "0".to_string(),
+                },
+                VertState {
+                    state: "0".to_string(),
+                    index: "1".to_string(),
+                },
+                VertState {
+                    state: "2".to_string(),
+                    index: "2".to_string(),
+                },
+                VertState {
+                    state: "2".to_string(),
+                    index: "3".to_string(),
+                },
+            ],
+            state: Default::default(),
+            surf_table: generate_surf_table(),
+            volume_table: generate_volume_table(),
+            base_tet: base_mesh_view(
+                PolygonMesh::tetrahedron(1.0).expect("Cannot create tet mesh"),
+                &context,
+            )
+            .expect("Cannot create the base mesh view"),
+            surf_mesh: None,
+            surf_indices: Vec::new(),
+            vol_mesh: None,
+            vol_indices: Vec::new(),
+        };
+        out.state = State::Changed;
+        out.update(context);
+        out
+    }
+
+    fn objects(&self) -> impl Iterator<Item = &dyn Object> {
+        self.base_tet
+            .as_iter()
+            .chain(self.surf_mesh.iter().flat_map(|m| m.as_iter()))
+            .chain(self.vol_mesh.iter().flat_map(|m| m.as_iter()))
+    }
+
+    fn update(&mut self, context: &Context) -> bool {
         if let State::Changed = self.state {
             let mask = match self
                 .vstates
@@ -57,9 +111,9 @@ impl App {
                 }
             };
             let rank = {
-                let mut indices = [0u8; 4];
+                let mut indices = [0usize; 4];
                 for (src, dst) in self.vstates.iter().zip(indices.iter_mut()) {
-                    *dst = match src.index.parse::<u8>() {
+                    *dst = match src.index.parse::<usize>() {
                         Ok(val) => val,
                         Err(e) => {
                             self.state = State::Error(format!(
@@ -70,25 +124,10 @@ impl App {
                         }
                     }
                 }
-                const FACTORIAL: [u8; 4] = [6, 2, 1, 0];
-                let out = match indices
-                    .iter()
-                    .zip(FACTORIAL.iter())
-                    .enumerate()
-                    .map(|(i, (first, factorial))| {
-                        (indices
-                            .iter()
-                            .skip(i + 1)
-                            .filter(|second| first > second)
-                            .count() as u8)
-                            * factorial
-                    })
-                    .reduce(|a, b| a + b)
-                {
-                    Some(rank) => rank,
-                    None => {
-                        self.state =
-                            State::Error("ERROR: Unable to compute the Lehmer Rank".to_string());
+                let out = match tables::lehmer_rank(indices) {
+                    Ok(rank) => rank,
+                    Err(msg) => {
+                        self.state = State::Error(msg.to_string());
                         return true;
                     }
                 };
@@ -100,11 +139,36 @@ impl App {
                 }
                 out
             };
+            // Update surface mesh.
+            let (mesh, indices) = self.surf_table.lookup(mask);
+            self.surf_mesh = surf_mesh_view(mesh, &context);
+            self.surf_indices = indices;
+            // Update volume mesh.
+            let (mesh, indices) = self.volume_table.lookup(mask, rank, 0.8);
+            self.vol_mesh = volume_mesh_view(mesh, &context);
+            self.vol_indices = indices;
+            // Update state.
             self.state = State::Valid { mask, rank };
             return true;
         }
         return false;
     }
+}
+
+fn generate_surf_table() -> SurfaceTable {
+    let before = Instant::now();
+    let table = SurfaceTable::generate();
+    let duration = Instant::now() - before;
+    println!("Surface table generation took {}µs", duration.as_micros());
+    table
+}
+
+fn generate_volume_table() -> VolumeTable {
+    let before = Instant::now();
+    let table = VolumeTable::generate();
+    let duration = Instant::now() - before;
+    println!("Volume table generation took {}µs", duration.as_micros());
+    table
 }
 
 fn main() {
@@ -115,8 +179,8 @@ fn main() {
         ..Default::default()
     })
     .unwrap();
-    let mut app = App::default();
     let context = window.gl();
+    let mut app = App::new(&context);
     // Setup the camera and the controls and lights.
     let target = vec3(0., 0., 0.);
     let scene_radius: f32 = 6.0;
@@ -133,11 +197,6 @@ fn main() {
     let ambient = AmbientLight::new(&context, 0.7, Srgba::WHITE);
     let directional0 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, vec3(-1.0, -1.0, -1.0));
     let directional1 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, vec3(1.0, 1.0, 1.0));
-    // Create the mesh.
-    let mut mesh = PolygonMesh::tetrahedron(1.0).expect("Cannot create tet mesh");
-    mesh.update_vertex_normals_accurate().unwrap();
-    let view = mesh_view(&mesh, &context);
-    let (vertices, edges) = wireframe_view(&mesh, &context, 0.01, 0.005);
     // Render loop.
     let mut gui = three_d::GUI::new(&context);
     window.render_loop(move |mut frame_input| {
@@ -190,7 +249,7 @@ fn main() {
                             });
                         // Help info.
                         ui.separator();
-                        ui.add_space(20.);
+                        ui.add_space(10.);
                         ui.heading("Help");
                         ui.label(RichText::new(
                             r#"
@@ -201,7 +260,8 @@ For each vertex, the state can be either 0, 1, or 2. The values, in that order, 
 The index of each vertex must be the global index of that vertex in the overall background tet-grid. This is used to compute the Lehmer Rank of the tetrahedron. This ensures that surface triangulation is consistent with the neighboring tetrahdra.
 "#).size(14.),
                         );
-                        ui.add_space(20.);
+                        ui.add_space(10.);
+                        app_changed |= app.update(&context);
                         ui.heading("Outputs");
                         ui.add_space(10.0);
                         match &app.state {
@@ -210,15 +270,31 @@ The index of each vertex must be the global index of that vertex in the overall 
                                 ui.label(
                                         RichText::new(format!("Mask: {}", mask)).size(14.),
                                 );
+                                ui.add_space(10.);
                                 ui.label(
                                         RichText::new(format!("Lehmer Rank: {}", rank)).size(14.),
-                                    )
+                                );
+                                ui.add_space(10.);
+                                ui.label(RichText::new(format!("Surface indices:\n{:?}", app.surf_indices)).size(14.));
+                                ui.label(RichText::new(format!("The count is {}, that means the surface has {} triangles.",
+                                                               app.surf_indices.len(), app.surf_indices.len() / 3))
+                                         .size(14.));
+                                ui.add_space(10.);
+                                ui.label(RichText::new(format!("Volume indices:\n{:?}", app.vol_indices)).size(14.));
+                                let n_vol = app.vol_indices.len();
+                                if n_vol > 0 {
+                                    ui.label(RichText::new(format!("The count is {}, that means the surface has {} tetrahedra.",
+                                                                   app.vol_indices.len(), app.vol_indices.len() / 4))
+                                             .size(14.))
+                                        
+                                } else {
+                                    ui.label(RichText::new(format!("The volume indices are empty, that means this tetrahedron should not be split into smaller tetrahedra")))
+                                }
                             },
                             State::Changed => panic!("The app state was not updated"),
                             State::Error(msg) => ui.monospace(msg),
                         }
                     });
-                app_changed |= app.update();
                 panel_width = left_response.response.rect.width();
                 gui_wants_pointer = gui_context.wants_pointer_input();
             },
@@ -242,7 +318,7 @@ The index of each vertex must be the global index of that vertex in the overall 
                 .screen()
                 .clear(ClearState::color_and_depth(0.1, 0.1, 0.1, 1.0, 1.0))
                 .write(|| {
-                    for obj in view.into_iter().chain(&vertices).chain(&edges) {
+                    for obj in app.objects() {
                         obj.render(&camera, &[&ambient, &directional0, &directional1]);
                     }
                     gui.render()

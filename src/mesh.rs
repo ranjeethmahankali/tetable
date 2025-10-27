@@ -4,7 +4,7 @@ use alum::{
 };
 use three_d::{
     Context, CpuMaterial, CpuMesh, Cull, Gm, Indices, InnerSpace, InstancedMesh, Instances, Mat4,
-    Mesh, PhysicalMaterial, Positions, Quat, Srgba, Vec3, vec3,
+    Mesh, Object, PhysicalMaterial, Positions, Quat, Srgba, Vec3, vec3,
 };
 
 pub struct MeshAdaptor;
@@ -63,8 +63,37 @@ impl DotProductAdaptor<3> for MeshAdaptor {
 
 pub type PolygonMesh = PolyMeshT<3, MeshAdaptor>;
 
-#[allow(dead_code)]
-pub fn mesh_view(mesh: &PolygonMesh, context: &Context) -> Gm<Mesh, PhysicalMaterial> {
+pub struct MeshView {
+    faces: Gm<Mesh, PhysicalMaterial>,
+    vertices: Gm<InstancedMesh, PhysicalMaterial>,
+    edges: Gm<InstancedMesh, PhysicalMaterial>,
+}
+
+impl MeshView {
+    pub fn as_iter(&self) -> impl Iterator<Item = &dyn Object> {
+        self.faces
+            .into_iter()
+            .chain(&self.vertices)
+            .chain(&self.edges)
+    }
+}
+
+fn mesh_view(
+    mut mesh: PolygonMesh,
+    context: &Context,
+    vertex_radius: f32,
+    edge_radius: f32,
+    face_material: PhysicalMaterial,
+    wireframe_material: PhysicalMaterial,
+) -> Option<MeshView> {
+    mesh.delete_isolated_vertices()
+        .expect("Cannot delete isolated vertices");
+    mesh.garbage_collection()
+        .expect("Cannot garbage collect mesh");
+    mesh.update_vertex_normals_accurate().unwrap();
+    if mesh.num_faces() == 0 {
+        return None;
+    }
     let points = mesh.points();
     let points = points.try_borrow().expect("Cannot borrow points");
     let vnormals = mesh.vertex_normals().unwrap();
@@ -82,48 +111,15 @@ pub fn mesh_view(mesh: &PolygonMesh, context: &Context) -> Gm<Mesh, PhysicalMate
         normals: Some(vnormals.to_vec()),
         ..Default::default()
     };
-    let model_material = PhysicalMaterial::new_opaque(
-        context,
-        &CpuMaterial {
-            albedo: Srgba::new_opaque(200, 200, 200),
-            roughness: 0.7,
-            metallic: 0.8,
-            ..Default::default()
-        },
-    );
-    Gm::new(Mesh::new(context, &cpumesh), model_material)
-}
-
-#[allow(dead_code)]
-pub fn wireframe_view(
-    mesh: &PolygonMesh,
-    context: &Context,
-    vertex_radius: f32,
-    edge_radius: f32,
-) -> (
-    Gm<InstancedMesh, PhysicalMaterial>,
-    Gm<InstancedMesh, PhysicalMaterial>,
-) {
-    let points = mesh.points();
-    let points = points.try_borrow().expect("Cannot borrow points");
-    let mut wireframe_material = PhysicalMaterial::new_opaque(
-        context,
-        &CpuMaterial {
-            albedo: Srgba::new_opaque(220, 50, 50),
-            roughness: 0.7,
-            metallic: 0.8,
-            ..Default::default()
-        },
-    );
-    wireframe_material.render_states.cull = Cull::Back;
     let mut sphere = CpuMesh::sphere(8);
     sphere.transform(Mat4::from_scale(vertex_radius)).unwrap();
     let mut cylinder = CpuMesh::cylinder(10);
     cylinder
         .transform(Mat4::from_nonuniform_scale(1.0, edge_radius, edge_radius))
         .unwrap();
-    (
-        Gm::new(
+    Some(MeshView {
+        faces: Gm::new(Mesh::new(context, &cpumesh), face_material),
+        vertices: Gm::new(
             InstancedMesh::new(
                 context,
                 &Instances {
@@ -137,7 +133,7 @@ pub fn wireframe_view(
             ),
             wireframe_material.clone(),
         ),
-        Gm::new(
+        edges: Gm::new(
             InstancedMesh::new(
                 context,
                 &Instances {
@@ -149,7 +145,7 @@ pub fn wireframe_view(
                             let length = ev.magnitude();
                             ev /= length;
                             let ev = vec3(ev.x, ev.y, ev.z);
-                            let start = points[h.tail(mesh)];
+                            let start = points[h.tail(&mesh)];
                             let start = vec3(start.x, start.y, start.z);
                             Mat4::from_translation(start)
                                 * Into::<Mat4>::into(Quat::from_arc(vec3(1.0, 0., 0.0), ev, None))
@@ -162,5 +158,95 @@ pub fn wireframe_view(
             ),
             wireframe_material,
         ),
+    })
+}
+
+pub fn base_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> {
+    let face_material = PhysicalMaterial::new_transparent(
+        context,
+        &CpuMaterial {
+            albedo: Srgba::new(200, 200, 200, 50),
+            roughness: 0.7,
+            metallic: 0.8,
+            ..Default::default()
+        },
+    );
+    let mut wireframe_material = PhysicalMaterial::new_opaque(
+        context,
+        &CpuMaterial {
+            albedo: Srgba::new_opaque(220, 50, 50),
+            roughness: 0.7,
+            metallic: 0.8,
+            ..Default::default()
+        },
+    );
+    wireframe_material.render_states.cull = Cull::Back;
+    mesh_view(
+        mesh,
+        context,
+        0.005,
+        0.005,
+        face_material,
+        wireframe_material,
+    )
+}
+
+pub fn surf_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> {
+    let face_material = PhysicalMaterial::new_opaque(
+        context,
+        &CpuMaterial {
+            albedo: Srgba::new(50, 220, 50, 255),
+            roughness: 0.7,
+            metallic: 0.8,
+            ..Default::default()
+        },
+    );
+    let mut wireframe_material = PhysicalMaterial::new_opaque(
+        context,
+        &CpuMaterial {
+            albedo: Srgba::new_opaque(50, 220, 50),
+            roughness: 0.7,
+            metallic: 0.8,
+            ..Default::default()
+        },
+    );
+    wireframe_material.render_states.cull = Cull::Back;
+    mesh_view(
+        mesh,
+        context,
+        0.0025,
+        0.0025,
+        face_material,
+        wireframe_material,
+    )
+}
+
+pub fn volume_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> {
+    let face_material = PhysicalMaterial::new_transparent(
+        context,
+        &CpuMaterial {
+            albedo: Srgba::new(50, 50, 220, 80),
+            roughness: 0.7,
+            metallic: 0.8,
+            ..Default::default()
+        },
+    );
+    let mut wireframe_material = PhysicalMaterial::new_opaque(
+        context,
+        &CpuMaterial {
+            albedo: Srgba::new_opaque(50, 50, 220),
+            roughness: 0.7,
+            metallic: 0.8,
+            ..Default::default()
+        },
+    );
+    wireframe_material.render_states.cull = Cull::Back;
+    mesh_view(
+        mesh,
+        context,
+        0.0025,
+        0.0025,
+        face_material,
+        wireframe_material,
     )
 }

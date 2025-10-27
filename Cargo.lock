@@ -40,7 +40,7 @@ dependencies = [
 [[package]]
 name = "alum"
 version = "0.6.3"
-source = "git+https://github.com/ranjeethmahankali/alum/?branch=tetable-misc-improvements#2538ad79799f87fac9d442336a085e670b5ed67e"
+source = "git+https://github.com/ranjeethmahankali/alum/?branch=tetable-misc-improvements#5b4da7e485c9417ad3c4f26e91b32b1d6ab9030f"
 dependencies = [
  "tobj",
 ]
