@@ -1,14 +1,15 @@
 mod mesh;
 mod tables;
+mod export;
 
 use std::time::Instant;
-
 use mesh::{MeshView, PolygonMesh, base_mesh_view, surf_mesh_view, volume_mesh_view};
 use tables::{SurfaceTable, VolumeTable};
 use three_d::{
     AmbientLight, Camera, ClearState, Context, DirectionalLight, FrameOutput, InnerSpace, Object,
     OrbitControl, Srgba, Viewport, Window, WindowSettings, degrees, vec3,
 };
+use export::export_tables;
 
 struct VertState {
     state: String,
@@ -292,7 +293,21 @@ The index of each vertex must be the global index of that vertex in the overall 
                                 }
                             },
                             State::Changed => panic!("The app state was not updated"),
-                            State::Error(msg) => ui.monospace(msg),
+                            State::Error(msg) => ui.monospace(msg), 
+                        };
+                        // Save button.
+                        ui.separator();
+                        ui.add_space(10.0);
+                        if ui.button("Export Tables").clicked() {
+                            if let Some(path) = rfd::FileDialog::new()
+                                .add_filter("C++", &["cpp", "hpp"])
+                                .save_file()
+                            {
+                                match export_tables(&app.surf_table, &app.volume_table, &path) {
+                                    Ok(()) => ui.label(format!("Tables were written to {}", path.display())),
+                                    Err(e) => ui.monospace(format!("ERROR: {}", e)),
+                                };
+                            }
                         }
                     });
                 panel_width = left_response.response.rect.width();

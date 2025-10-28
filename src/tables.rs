@@ -227,8 +227,8 @@ fn edge_vertices(edge: u32) -> (VH, VH) {
     (v0.into(), v1.into())
 }
 
-const NUM_IDX_PERM: usize = 24;
-const NUM_MASK_COMB: usize = 81;
+pub const NUM_IDX_PERM: usize = 24;
+pub const NUM_MASK_COMB: usize = 81;
 
 pub struct SurfaceTable {
     ranges: [(usize, usize); NUM_MASK_COMB],
@@ -308,6 +308,14 @@ impl SurfaceTable {
             *range = (start, len);
         }
         SurfaceTable { ranges, indices }
+    }
+
+    pub fn indices(&self) -> &[u8] {
+        &self.indices
+    }
+
+    pub fn ranges(&self) -> &[(usize, usize)] {
+        &self.ranges
     }
 
     pub fn lookup(&self, mask: u8) -> (PolygonMesh, Vec<u8>) {
@@ -539,6 +547,14 @@ impl VolumeTable {
             }
         }
         VolumeTable { ranges, indices }
+    }
+
+    pub fn indices(&self) -> &[u8] {
+        &self.indices
+    }
+
+    pub fn ranges(&self) -> &[[(usize, usize); NUM_IDX_PERM]] {
+        &self.ranges
     }
 
     pub fn lookup(&self, mask: u8, rank: u8, scaling: f32) -> (PolygonMesh, Vec<u8>) {
