@@ -7,3 +7,15 @@ edition = "2024"
 alum = { version = "0.6", git = "https://github.com/ranjeethmahankali/alum/", branch = "tetable-misc-improvements" }
 three-d = { version = "0.18", features = ["egui-gui"] }
 rfd = "0.15"
+
+# For smaller binary size.
+[profile.release]
+strip = true # Automatically strip symbols
+panic = "abort" # Don't unwind stack.
+codegen-units = 1
+lto = true
+
+[profile.release-with-debug]
+inherits = "release"
+strip = false # Automatically strip symbols
+debug = true
