@@ -200,6 +200,7 @@ fn main() {
     let directional1 = DirectionalLight::new(&context, 2.0, Srgba::WHITE, vec3(1.0, 1.0, 1.0));
     // Render loop.
     let mut gui = three_d::GUI::new(&context);
+    let mut frame_count: u8 = 0;
     window.render_loop(move |mut frame_input| {
         let mut panel_width = 0.0;
         let mut gui_wants_pointer = false;
@@ -314,7 +315,7 @@ The index of each vertex must be the global index of that vertex in the overall 
                 gui_wants_pointer = gui_context.wants_pointer_input();
             },
         );
-        let mut redraw = frame_input.first_frame || app_changed;
+        let mut redraw = frame_input.first_frame || frame_count < 10 || app_changed;
         redraw |= camera.set_viewport(Viewport {
             x: (panel_width * frame_input.device_pixel_ratio) as i32,
             y: 0,
@@ -339,6 +340,7 @@ The index of each vertex must be the global index of that vertex in the overall 
                     gui.render()
                 })
                 .expect("Cannot render the scene");
+            frame_count = frame_count.saturating_add(1);
         }
         FrameOutput {
             swap_buffers: redraw,
