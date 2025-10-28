@@ -8,6 +8,8 @@ alum = { version = "0.6", git = "https://github.com/ranjeethmahankali/alum/", br
 three-d = { version = "0.18", features = ["egui-gui"] }
 rfd = "0.15"
 
+# IMPORTANT: On Ubuntu this needs libwayland-dev to build.
+
 # For smaller binary size.
 [profile.release]
 strip = true # Automatically strip symbols
