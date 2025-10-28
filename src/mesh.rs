@@ -165,9 +165,7 @@ pub fn base_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> 
     let face_material = PhysicalMaterial::new_transparent(
         context,
         &CpuMaterial {
-            albedo: Srgba::new(200, 200, 200, 50),
-            roughness: 0.7,
-            metallic: 0.8,
+            albedo: Srgba::new(200, 200, 200, 25),
             ..Default::default()
         },
     );
@@ -175,8 +173,6 @@ pub fn base_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> 
         context,
         &CpuMaterial {
             albedo: Srgba::new_opaque(220, 50, 50),
-            roughness: 0.7,
-            metallic: 0.8,
             ..Default::default()
         },
     );
@@ -184,8 +180,8 @@ pub fn base_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> 
     mesh_view(
         mesh,
         context,
-        0.005,
-        0.005,
+        0.0025,
+        0.0025,
         face_material,
         wireframe_material,
     )
@@ -195,18 +191,14 @@ pub fn surf_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> 
     let face_material = PhysicalMaterial::new_opaque(
         context,
         &CpuMaterial {
-            albedo: Srgba::new(50, 220, 50, 255),
-            roughness: 0.7,
-            metallic: 0.8,
+            albedo: Srgba::new_opaque(100, 200, 100),
             ..Default::default()
         },
     );
     let mut wireframe_material = PhysicalMaterial::new_opaque(
         context,
         &CpuMaterial {
-            albedo: Srgba::new_opaque(50, 220, 50),
-            roughness: 0.7,
-            metallic: 0.8,
+            albedo: Srgba::new_opaque(50, 100, 50),
             ..Default::default()
         },
     );
@@ -222,21 +214,17 @@ pub fn surf_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> 
 }
 
 pub fn volume_mesh_view(mesh: PolygonMesh, context: &Context) -> Option<MeshView> {
-    let face_material = PhysicalMaterial::new_transparent(
+    let face_material = PhysicalMaterial::new_opaque(
         context,
         &CpuMaterial {
-            albedo: Srgba::new(50, 50, 220, 80),
-            roughness: 0.7,
-            metallic: 0.8,
+            albedo: Srgba::new_opaque(100, 100, 200),
             ..Default::default()
         },
     );
     let mut wireframe_material = PhysicalMaterial::new_opaque(
         context,
         &CpuMaterial {
-            albedo: Srgba::new_opaque(50, 50, 220),
-            roughness: 0.7,
-            metallic: 0.8,
+            albedo: Srgba::new_opaque(50, 50, 100),
             ..Default::default()
         },
     );
