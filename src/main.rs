@@ -259,7 +259,7 @@ Please populate the vertex information in the table above.
 
 For each vertex, the state can be either 0, 1, or 2. The values, in that order, indicate whether the vertex is inside the surface, exactly on the surface, or outside the surface.
 
-The index of each vertex must be the global index of that vertex in the overall background tet-grid. This is used to compute the Lehmer Rank of the tetrahedron. This ensures that surface triangulation is consistent with the neighboring tetrahdra.
+The index of each vertex must be the global index of that vertex in the overall background tet-grid. This is used to compute the Lehmer Rank of the tetrahedron. This ensures that surface triangulation is consistent with the neighboring tetrahdra, even when you split the tetrahedra independently.
 "#).size(14.),
                         );
                         ui.add_space(10.);
