@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 alum = { version = "0.6", git = "https://github.com/ranjeethmahankali/alum/", branch = "tetable-misc-improvements" }
 three-d = { version = "0.18", features = ["egui-gui"] }
-rfd = "0.15"
+rfd = "0.15" # For showing the file dialog
 
 # IMPORTANT: On Ubuntu this needs libwayland-dev to build.
 
