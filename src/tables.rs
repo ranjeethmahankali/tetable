@@ -38,25 +38,7 @@ fn index_permutations() -> impl Iterator<Item = [usize; 4]> {
 }
 
 fn base_tet() -> PolygonMesh {
-    let pts = {
-        let a = 1.0f32 / 3.0;
-        let b = (8.0 / 9.0f32).sqrt();
-        let c = (2.0 / 9.0f32).sqrt();
-        let d = (2.0 / 3.0f32).sqrt();
-        [
-            Vec3::new(-c, -d, -a),
-            Vec3::new(b, 0.0, -a),
-            Vec3::new(-c, d, -a),
-            Vec3::new(0.0, 0.0, 1.0),
-        ]
-    };
-    let mut mesh = PolygonMesh::new();
-    mesh.add_vertices(&pts)
-        .expect("Cannot add vertices to base tet mesh");
-    for [a, b, c] in [[0, 2, 1], [0, 1, 3], [1, 2, 3], [2, 0, 3]] {
-        mesh.add_tri_face(a.into(), b.into(), c.into())
-            .expect("Cannot add faces to base tet mesh");
-    }
+    let mut mesh = PolygonMesh::tetrahedron(1.0).expect("Cannot create a tetrahedron");
     for ei in 0u32..6 {
         let (v0, v1) = edge_vertices(ei);
         let p0 = mesh.point(v0).expect("cannot retrieve point");
