@@ -568,7 +568,7 @@ impl VolumeTable {
                     .iter()
                     .map(|p| mesh.add_vertex(*p).expect("Unable to add vertex to mesh")),
             );
-            for [a, b, c] in [[0, 2, 1], [0, 1, 3], [1, 2, 3], [2, 0, 3]] {
+            for [a, b, c] in [[0, 1, 2], [0, 3, 1], [2, 1, 3], [0, 2, 3]] {
                 mesh.add_tri_face(verts[a], verts[b], verts[c])
                     .expect("Cannot add tet face to split-tet-mesh");
             }
