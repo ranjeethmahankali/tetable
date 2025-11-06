@@ -397,8 +397,8 @@ fn extract_one_tet(
         .expect("Unable to add a new face during tetrahedralization");
     [
         vcache[0].index() as u8,
-        vcache[1].index() as u8,
         vcache[2].index() as u8,
+        vcache[1].index() as u8,
         v.index() as u8,
     ]
 }
